@@ -2,6 +2,12 @@
 (function () {
     // CSS-Selektor, um den Titel zu finden (z. B. "Chrome for Developers")
     const TITLE_SEL = '.devsite-product-name-wrapper a, .devsite-product-name-wrapper';
+    const HIDE_SELECTORS = [
+        '.devsite-toc',            // Inhaltsverzeichnis
+        '.devsite-expandable-nav'
+    ];
+
+    const HIDDEN_CLASS = 'myext-hidden-mode';
 
     function placeOnce() {
         // 1. Versuchen, den Titel im DOM zu finden
@@ -46,7 +52,7 @@
         user-select: none;
       }
       button:hover { background: rgba(0,0,0,.08); }
-    `;
+    `
         root.appendChild(style);
 
         // 6. Den eigentlichen Button erzeugen und ins Shadow DOM setzen
@@ -54,12 +60,32 @@
         btn.type = 'button';
         btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
         btn.textContent = '🙈';           // Unser Emoji (vorerst nur statisch)
+        btn.addEventListener('click', () => {
+            const hasHiddenClass = document.body.classList.toggle(HIDDEN_CLASS);
+            btn.textContent = hasHiddenClass ? '👀' : '🙈';
+        });
         root.appendChild(btn);
+
+        injectPageStyles();
     }
 
     // Initialer Aufruf, wenn DOM fertig ist
     function init() {
         placeOnce();
+    }
+
+    function injectPageStyles() {
+        if (document.getElementById('myext-page-style')) return;
+
+        const style = document.createElement('style');
+        style.id = 'myext-page-style';
+
+        const combinedSelectors = HIDE_SELECTORS
+            .map(sel => `body.${HIDDEN_CLASS} ${sel}`)
+            .join(',\n');
+
+        style.textContent = `${combinedSelectors} { display: none !important; }`;
+        document.head.appendChild(style);
     }
 
     if (document.readyState === 'loading') {
