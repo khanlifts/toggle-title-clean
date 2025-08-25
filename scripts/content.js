@@ -1,10 +1,12 @@
 // content.js – Schritt 2: Shadow-Container + Button ohne Funktion
 (function () {
     // CSS-Selektor, um den Titel zu finden (z. B. "Chrome for Developers")
-    const TITLE_SEL = '.devsite-product-name-wrapper a, .devsite-product-name-wrapper';
+    const TITLE_SEL = '#global-nav-search';
     const HIDE_SELECTORS = [
-        '.devsite-toc',            // Inhaltsverzeichnis
-        '.devsite-expandable-nav'
+        '.notification-badge',
+        '.msg-convo-wrapper',
+        '.msg-overlay-bubble-header__unread-count',
+        '.msg-overlay-container'
     ];
 
     const HIDDEN_CLASS = 'myext-hidden-mode';
@@ -59,10 +61,10 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
-        btn.textContent = '🙈';           // Unser Emoji (vorerst nur statisch)
+        btn.textContent = '👀';           // Unser Emoji (vorerst nur statisch)
         btn.addEventListener('click', () => {
             const hasHiddenClass = document.body.classList.toggle(HIDDEN_CLASS);
-            btn.textContent = hasHiddenClass ? '👀' : '🙈';
+            btn.textContent = hasHiddenClass ? '🙈' : '👀';
         });
         root.appendChild(btn);
 
