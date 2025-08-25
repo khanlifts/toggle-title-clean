@@ -18,6 +18,12 @@
         // 2. Wenn kein Titel gefunden wurde oder unser Button-Host schon existiert, nichts tun
         if (!titleEl || document.getElementById('myext-host')) return;
 
+        // Zustand aus localStorage lesen
+        const wasHidden = localStorage.getItem('myext-hidden-mode') === '1';
+        if (wasHidden) {
+            document.body.classList.add(HIDDEN_CLASS);
+        }
+
         // 3. Einen "Host" erzeugen:
         //    - Das ist ein <span>, den wir künstlich direkt neben den Titel einfügen
         //    - In diesen <span> setzen wir gleich einen Shadow Root (eine Art Mini-DOM-Insel)
@@ -63,10 +69,19 @@
         btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
         btn.textContent = '👀';           // Unser Emoji (vorerst nur statisch)
         btn.addEventListener('click', () => {
-            const hasHiddenClass = document.body.classList.toggle(HIDDEN_CLASS);
-            btn.textContent = hasHiddenClass ? '🙈' : '👀';
+            const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
+            btn.textContent = isNowHidden ? '🙈' : '👀';
+
+            // Zustand speichern
+            try {
+                localStorage.setItem('myext-hidden-mode', isNowHidden ? '1' : '0');
+            } catch (e) {
+                console.warn('[myext] localStorage not available', e);
+            }
         });
         root.appendChild(btn);
+
+        btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
 
         injectPageStyles();
     }
