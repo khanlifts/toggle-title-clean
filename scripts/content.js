@@ -49,6 +49,28 @@ function injectPageStyles() {
     document.head.appendChild(style);
 }
 
+function createToggleButton(root) {
+    // 6. Den eigentlichen Button erzeugen und ins Shadow DOM setzen
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
+    btn.textContent = '👀';           // Unser Emoji (vorerst nur statisch)
+    btn.addEventListener('click', () => {
+        const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
+        btn.textContent = isNowHidden ? '🙈' : '👀';
+
+        // Zustand speichern
+        try {
+            localStorage.setItem('myext-hidden-mode', isNowHidden ? '1' : '0');
+        } catch (e) {
+            console.warn('[myext] localStorage not available', e);
+        }
+    });
+    root.appendChild(btn);
+
+    btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
+}
+
 function placeOnce() {
     // 1. Versuchen, den Titel im DOM zu finden
     const titleEl = document.querySelector(TITLE_SEL);
@@ -101,25 +123,7 @@ function placeOnce() {
     `
     root.appendChild(style);
 
-    // 6. Den eigentlichen Button erzeugen und ins Shadow DOM setzen
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
-    btn.textContent = '👀';           // Unser Emoji (vorerst nur statisch)
-    btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
-        btn.textContent = isNowHidden ? '🙈' : '👀';
-
-        // Zustand speichern
-        try {
-            localStorage.setItem('myext-hidden-mode', isNowHidden ? '1' : '0');
-        } catch (e) {
-            console.warn('[myext] localStorage not available', e);
-        }
-    });
-    root.appendChild(btn);
-
-    btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
+    createToggleButton(root);
 }
 
 
