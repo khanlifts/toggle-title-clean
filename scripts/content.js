@@ -1,14 +1,18 @@
 const TITLE_SEL = '#global-nav-search';
 const HIDE_SELECTORS = [
-    '.notification-badge',
     '.msg-convo-wrapper',
-    '.msg-overlay-bubble-header__unread-count',
     '.msg-overlay-container'
 ];
 
 const HIDDEN_CLASS = 'myext-hidden-mode';
 const STYLE_ID = 'myext-page-style';
 const HOST_ID = 'myext-host';
+
+const HIDE_NOTIFICATIONS_CLASS = 'myext-hide-notifications';
+const NOTIFICATION_SELECTORS = [
+    '.notification-badge',
+    '.msg-overlay-bubble-header__unread-count'
+];
 
 // Sicherstellen, dass document.head existiert
 function waitForHeadAndInjectStyles() {
@@ -24,6 +28,9 @@ function waitForBodyAndApplyState() {
     if (document.body) {
         if (localStorage.getItem('myext-hidden-mode') === '1') {
             document.body.classList.add('myext-hidden-mode');
+        }
+        if (localStorage.getItem('myext-hide-notifications') === '1') {
+            document.body.classList.add(HIDE_NOTIFICATIONS_CLASS);
         }
     } else {
         requestAnimationFrame(waitForBodyAndApplyState);
@@ -41,34 +48,28 @@ function injectPageStyles() {
     const style = document.createElement('style');
     style.id = STYLE_ID;
 
+    const notifSelectors = NOTIFICATION_SELECTORS
+        .map(sel => `body.${HIDE_NOTIFICATIONS_CLASS} ${sel}`)
+        .join(',\n');
+
     const combinedSelectors = HIDE_SELECTORS
         .map(sel => `body.${HIDDEN_CLASS} ${sel}`)
         .join(',\n');
 
-    style.textContent = `${combinedSelectors} { display: none !important; }`;
+    style.textContent = `
+    ${notifSelectors} { display: none !important; }
+    ${combinedSelectors} { display: none !important; }
+    `;
     document.head.appendChild(style);
 }
 
-function createToggleButton(root) {
+function createSimpleButton(root, emoji = '❓', title = 'Zweiter Button') {
     // 6. Den eigentlichen Button erzeugen und ins Shadow DOM setzen
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.title = 'Ansicht umschalten'; // Tooltip bei Hover
-    btn.textContent = '👀';           // Unser Emoji (vorerst nur statisch)
-    btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
-        btn.textContent = isNowHidden ? '🙈' : '👀';
-
-        // Zustand speichern
-        try {
-            localStorage.setItem('myext-hidden-mode', isNowHidden ? '1' : '0');
-        } catch (e) {
-            console.warn('[myext] localStorage not available', e);
-        }
-    });
+    btn.title = title; // Tooltip bei Hover
+    btn.textContent = emoji;           // Unser Emoji (vorerst nur statisch)
     root.appendChild(btn);
-
-    btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
 }
 
 function createButtonStyleElement() {
@@ -94,6 +95,28 @@ function createButtonStyleElement() {
       button:hover { background: rgba(0,0,0,.08); }
     `
     return style;
+}
+
+function createNotificationToggleButton(root) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Benachrichtigungen umschalten';
+    btn.textContent = '🔔';
+    btn.addEventListener('click', () => {
+        const isNowHidden = document.body.classList.toggle(HIDE_NOTIFICATIONS_CLASS);
+        btn.textContent = isNowHidden ? '🔕' : '🔔';
+
+        try {
+            localStorage.setItem('myext-hide-notifications', isNowHidden ? '1' : '0');
+        } catch (e) {
+            console.warn('[myext] localStorage not available', e);
+        }
+    });
+
+    // Zustand initial setzen (richtiges Emoji)
+    btn.textContent = document.body.classList.contains(HIDE_NOTIFICATIONS_CLASS) ? '🔕' : '🔔';
+
+    root.appendChild(btn);
 }
 
 function placeOnce() {
@@ -127,7 +150,8 @@ function placeOnce() {
 
     root.appendChild(createButtonStyleElement());
 
-    createToggleButton(root);
+    createSimpleButton(root, '👀', 'Hauptansicht umschalten');
+    createNotificationToggleButton(root);
 }
 
 
