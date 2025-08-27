@@ -11,6 +11,29 @@
 
     const HIDDEN_CLASS = 'myext-hidden-mode';
 
+    // Sicherstellen, dass document.head existiert
+    function waitForHeadAndInjectStyles() {
+        if (document.head) {
+            injectPageStyles();
+        } else {
+            requestAnimationFrame(waitForHeadAndInjectStyles);
+        }
+    }
+
+    waitForHeadAndInjectStyles(); // ✅ Neuer, sicherer Aufruf
+
+    // Neuer: Klasse möglichst früh setzen, aber nur wenn <body> existiert
+    function waitForBodyAndApplyState() {
+        if (document.body) {
+            if (localStorage.getItem('myext-hidden-mode') === '1') {
+                document.body.classList.add('myext-hidden-mode');
+            }
+        } else {
+            requestAnimationFrame(waitForBodyAndApplyState);
+        }
+    }
+    waitForBodyAndApplyState();
+
     function placeOnce() {
         // 1. Versuchen, den Titel im DOM zu finden
         const titleEl = document.querySelector(TITLE_SEL);
@@ -82,8 +105,6 @@
         root.appendChild(btn);
 
         btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
-
-        injectPageStyles();
     }
 
     // Initialer Aufruf, wenn DOM fertig ist
