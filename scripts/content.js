@@ -36,10 +36,10 @@ function init() {
 }
 
 function injectPageStyles() {
-    if (document.getElementById('myext-page-style')) return;
+    if (document.getElementById(STYLE_ID)) return;
 
     const style = document.createElement('style');
-    style.id = 'myext-page-style';
+    style.id = STYLE_ID;
 
     const combinedSelectors = HIDE_SELECTORS
         .map(sel => `body.${HIDDEN_CLASS} ${sel}`)
@@ -71,35 +71,7 @@ function createToggleButton(root) {
     btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
 }
 
-function placeOnce() {
-    // 1. Versuchen, den Titel im DOM zu finden
-    const titleEl = document.querySelector(TITLE_SEL);
-
-    // 2. Wenn kein Titel gefunden wurde oder unser Button-Host schon existiert, nichts tun
-    if (!titleEl || document.getElementById('myext-host')) return;
-
-    // Zustand aus localStorage lesen
-    const wasHidden = localStorage.getItem('myext-hidden-mode') === '1';
-    if (wasHidden) {
-        document.body.classList.add(HIDDEN_CLASS);
-    }
-
-    // 3. Einen "Host" erzeugen:
-    //    - Das ist ein <span>, den wir künstlich direkt neben den Titel einfügen
-    //    - In diesen <span> setzen wir gleich einen Shadow Root (eine Art Mini-DOM-Insel)
-    const host = document.createElement('span');
-    host.id = 'myext-host';
-    host.style.display = 'inline-block';   // damit der Button nicht verrutscht
-    host.style.verticalAlign = 'middle';   // optisch mittig am Titel ausgerichtet
-    host.style.marginLeft = '8px';         // kleiner Abstand zum Titel
-    titleEl.insertAdjacentElement('afterend', host); // direkt nach dem Titel einfügen
-
-    // 4. Shadow DOM erzeugen:
-    //    - attachShadow() kapselt HTML/CSS vom Rest der Seite ab
-    //    - mode: 'open' bedeutet, dass wir von außen (JS-Konsole) zugreifen können
-    //      (bei 'closed' wäre der Shadow DOM versteckt)
-    const root = host.attachShadow({ mode: 'open' });
-
+function createButtonStyleElement() {
     // 5. Eigenes Stylesheet ins Shadow DOM einfügen
     //    - So verhindern wir, dass das CSS der Seite unseren Button beeinflusst
     //    - Alles innerhalb von root ist isoliert
@@ -121,7 +93,39 @@ function placeOnce() {
       }
       button:hover { background: rgba(0,0,0,.08); }
     `
-    root.appendChild(style);
+    return style;
+}
+
+function placeOnce() {
+    // 1. Versuchen, den Titel im DOM zu finden
+    const titleEl = document.querySelector(TITLE_SEL);
+
+    // 2. Wenn kein Titel gefunden wurde oder unser Button-Host schon existiert, nichts tun
+    if (!titleEl || document.getElementById(HOST_ID)) return;
+
+    // Zustand aus localStorage lesen
+    const wasHidden = localStorage.getItem('myext-hidden-mode') === '1';
+    if (wasHidden) {
+        document.body.classList.add(HIDDEN_CLASS);
+    }
+
+    // 3. Einen "Host" erzeugen:
+    //    - Das ist ein <span>, den wir künstlich direkt neben den Titel einfügen
+    //    - In diesen <span> setzen wir gleich einen Shadow Root (eine Art Mini-DOM-Insel)
+    const host = document.createElement('span');
+    host.id = HOST_ID;
+    host.style.display = 'inline-block';   // damit der Button nicht verrutscht
+    host.style.verticalAlign = 'middle';   // optisch mittig am Titel ausgerichtet
+    host.style.marginLeft = '8px';         // kleiner Abstand zum Titel
+    titleEl.insertAdjacentElement('afterend', host); // direkt nach dem Titel einfügen
+
+    // 4. Shadow DOM erzeugen:
+    //    - attachShadow() kapselt HTML/CSS vom Rest der Seite ab
+    //    - mode: 'open' bedeutet, dass wir von außen (JS-Konsole) zugreifen können
+    //      (bei 'closed' wäre der Shadow DOM versteckt)
+    const root = host.attachShadow({ mode: 'open' });
+
+    root.appendChild(createButtonStyleElement());
 
     createToggleButton(root);
 }
