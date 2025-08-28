@@ -1,5 +1,11 @@
+const HIDE_MESSAGES_CLASS = 'myext-hide-messages';
 const TITLE_SEL = '#global-nav-search';
-const HIDE_SELECTORS = [
+
+const TIMELINE_SELECTORS = [
+    '.scaffold-finite-scroll'
+];
+
+const MESSAGE_SELECTORS = [
     '.msg-convo-wrapper',
     '.msg-overlay-container'
 ];
@@ -29,8 +35,11 @@ function waitForBodyAndApplyState() {
         if (localStorage.getItem('myext-hidden-mode') === '1') {
             document.body.classList.add('myext-hidden-mode');
         }
-        if (localStorage.getItem('myext-hide-notifications') === '1') {
+        if (localStorage.getItem(HIDE_NOTIFICATIONS_CLASS) === '1') {
             document.body.classList.add(HIDE_NOTIFICATIONS_CLASS);
+        }
+        if (localStorage.getItem(HIDE_MESSAGES_CLASS) === '1') {
+            document.body.classList.add(HIDE_MESSAGES_CLASS);
         }
     } else {
         requestAnimationFrame(waitForBodyAndApplyState);
@@ -48,17 +57,28 @@ function injectPageStyles() {
     const style = document.createElement('style');
     style.id = STYLE_ID;
 
+    const messageSelectors = MESSAGE_SELECTORS
+        .map(sel => `body.${HIDE_MESSAGES_CLASS} ${sel}`)
+        .join(',\n');
+
     const notifSelectors = NOTIFICATION_SELECTORS
         .map(sel => `body.${HIDE_NOTIFICATIONS_CLASS} ${sel}`)
         .join(',\n');
 
-    const combinedSelectors = HIDE_SELECTORS
+    const timelineSelectors = TIMELINE_SELECTORS
         .map(sel => `body.${HIDDEN_CLASS} ${sel}`)
         .join(',\n');
 
     style.textContent = `
-    ${notifSelectors} { display: none !important; }
-    ${combinedSelectors} { display: none !important; }
+    ${messageSelectors} {
+        display: none !important;
+    }
+    ${notifSelectors} {
+        display: none !important;
+    }
+    ${timelineSelectors} {
+        display: none !important;
+    }
     `;
     document.head.appendChild(style);
 }
@@ -119,6 +139,49 @@ function createNotificationToggleButton(root) {
     root.appendChild(btn);
 }
 
+function createMessageToggleButton(root) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Nachrichten umschalten';
+    btn.textContent = '💬';
+    btn.addEventListener('click', () => {
+        const isNowHidden = document.body.classList.toggle(HIDE_MESSAGES_CLASS);
+        btn.textContent = isNowHidden ? '🚫' : '💬';
+
+        try {
+            localStorage.setItem('myext-hide-messages', isNowHidden ? '1' : '0');
+        } catch (e) {
+            console.warn('[myext] localStorage not available', e);
+        }
+    });
+
+    btn.textContent = document.body.classList.contains(HIDE_MESSAGES_CLASS) ? '🚫' : '💬';
+
+    root.appendChild(btn);
+}
+
+
+function createTimelineToggleButton(root) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Timeline umschalten';
+    btn.textContent = '👀';
+    btn.addEventListener('click', () => {
+        const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
+        btn.textContent = isNowHidden ? '🙈' : '👀';
+
+        try {
+            localStorage.setItem(HIDDEN_CLASS, isNowHidden ? '1' : '0');
+        } catch (e) {
+            console.warn('[myext] localStorage not available', e);
+        }
+    });
+
+    btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
+
+    root.appendChild(btn);
+}
+
 function placeOnce() {
     // 1. Versuchen, den Titel im DOM zu finden
     const titleEl = document.querySelector(TITLE_SEL);
@@ -150,8 +213,9 @@ function placeOnce() {
 
     root.appendChild(createButtonStyleElement());
 
-    createSimpleButton(root, '👀', 'Hauptansicht umschalten');
     createNotificationToggleButton(root);
+    createMessageToggleButton(root);
+    createTimelineToggleButton(root);
 }
 
 
