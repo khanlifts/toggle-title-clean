@@ -1,23 +1,23 @@
-const HIDE_MESSAGES_CLASS = 'myext-hide-messages';
 const TITLE_SEL = '#global-nav-search';
+const STYLE_ID = 'myext-page-style';
+const HOST_ID = 'myext-host';
+
+const HIDE_TIMELINE_CLASS = 'myext-hidden-mode';
+const HIDE_MESSAGES_CLASS = 'myext-hide-messages';
+const HIDE_NOTIFICATIONS_CLASS = 'myext-hide-notifications';
 
 const TIMELINE_SELECTORS = [
     '.scaffold-finite-scroll'
 ];
 
-const MESSAGE_SELECTORS = [
-    '.msg-convo-wrapper',
-    '.msg-overlay-container'
-];
-
-const HIDDEN_CLASS = 'myext-hidden-mode';
-const STYLE_ID = 'myext-page-style';
-const HOST_ID = 'myext-host';
-
-const HIDE_NOTIFICATIONS_CLASS = 'myext-hide-notifications';
 const NOTIFICATION_SELECTORS = [
     '.notification-badge',
     '.msg-overlay-bubble-header__unread-count'
+];
+
+const MESSAGE_SELECTORS = [
+    '.msg-convo-wrapper',
+    '.msg-overlay-container'
 ];
 
 // Sicherstellen, dass document.head existiert
@@ -32,8 +32,8 @@ function waitForHeadAndInjectStyles() {
 // Neuer: Klasse möglichst früh setzen, aber nur wenn <body> existiert
 function waitForBodyAndApplyState() {
     if (document.body) {
-        if (localStorage.getItem('myext-hidden-mode') === '1') {
-            document.body.classList.add('myext-hidden-mode');
+        if (localStorage.getItem(HIDE_TIMELINE_CLASS) === '1') {
+            document.body.classList.add(HIDE_TIMELINE_CLASS);
         }
         if (localStorage.getItem(HIDE_NOTIFICATIONS_CLASS) === '1') {
             document.body.classList.add(HIDE_NOTIFICATIONS_CLASS);
@@ -46,11 +46,6 @@ function waitForBodyAndApplyState() {
     }
 }
 
-// Initialer Aufruf, wenn DOM fertig ist
-function init() {
-    placeOnce();
-}
-
 function injectPageStyles() {
     if (document.getElementById(STYLE_ID)) return;
 
@@ -61,35 +56,26 @@ function injectPageStyles() {
         .map(sel => `body.${HIDE_MESSAGES_CLASS} ${sel}`)
         .join(',\n');
 
-    const notifSelectors = NOTIFICATION_SELECTORS
+    const notificationSelectors = NOTIFICATION_SELECTORS
         .map(sel => `body.${HIDE_NOTIFICATIONS_CLASS} ${sel}`)
         .join(',\n');
 
     const timelineSelectors = TIMELINE_SELECTORS
-        .map(sel => `body.${HIDDEN_CLASS} ${sel}`)
+        .map(sel => `body.${HIDE_TIMELINE_CLASS} ${sel}`)
         .join(',\n');
 
     style.textContent = `
     ${messageSelectors} {
-        display: none !important;
+        opacity: 0 !important;
     }
-    ${notifSelectors} {
-        display: none !important;
+    ${notificationSelectors} {
+        opacity: 0 !important;
     }
     ${timelineSelectors} {
-        display: none !important;
+        opacity: 0 !important;
     }
     `;
     document.head.appendChild(style);
-}
-
-function createSimpleButton(root, emoji = '❓', title = 'Zweiter Button') {
-    // 6. Den eigentlichen Button erzeugen und ins Shadow DOM setzen
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = title; // Tooltip bei Hover
-    btn.textContent = emoji;           // Unser Emoji (vorerst nur statisch)
-    root.appendChild(btn);
 }
 
 function createButtonStyleElement() {
@@ -109,6 +95,7 @@ function createButtonStyleElement() {
         border-radius: 6px;
         border: 1px solid rgba(0,0,0,.12);
         background: rgba(0,0,0,.04);
+        margin-right: 5px;
         cursor: pointer;
         user-select: none;
       }
@@ -127,7 +114,7 @@ function createNotificationToggleButton(root) {
         btn.textContent = isNowHidden ? '🔕' : '🔔';
 
         try {
-            localStorage.setItem('myext-hide-notifications', isNowHidden ? '1' : '0');
+            localStorage.setItem(HIDE_NOTIFICATIONS_CLASS, isNowHidden ? '1' : '0');
         } catch (e) {
             console.warn('[myext] localStorage not available', e);
         }
@@ -167,33 +154,27 @@ function createTimelineToggleButton(root) {
     btn.title = 'Timeline umschalten';
     btn.textContent = '👀';
     btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDDEN_CLASS);
+        const isNowHidden = document.body.classList.toggle(HIDE_TIMELINE_CLASS);
         btn.textContent = isNowHidden ? '🙈' : '👀';
 
         try {
-            localStorage.setItem(HIDDEN_CLASS, isNowHidden ? '1' : '0');
+            localStorage.setItem(HIDE_TIMELINE_CLASS, isNowHidden ? '1' : '0');
         } catch (e) {
             console.warn('[myext] localStorage not available', e);
         }
     });
 
-    btn.textContent = document.body.classList.contains(HIDDEN_CLASS) ? '🙈' : '👀';
+    btn.textContent = document.body.classList.contains(HIDE_TIMELINE_CLASS) ? '🙈' : '👀';
 
     root.appendChild(btn);
 }
 
-function placeOnce() {
+function init() {
     // 1. Versuchen, den Titel im DOM zu finden
     const titleEl = document.querySelector(TITLE_SEL);
 
     // 2. Wenn kein Titel gefunden wurde oder unser Button-Host schon existiert, nichts tun
     if (!titleEl || document.getElementById(HOST_ID)) return;
-
-    // Zustand aus localStorage lesen
-    const wasHidden = localStorage.getItem('myext-hidden-mode') === '1';
-    if (wasHidden) {
-        document.body.classList.add(HIDDEN_CLASS);
-    }
 
     // 3. Einen "Host" erzeugen:
     //    - Das ist ein <span>, den wir künstlich direkt neben den Titel einfügen
@@ -213,9 +194,9 @@ function placeOnce() {
 
     root.appendChild(createButtonStyleElement());
 
+    createTimelineToggleButton(root);
     createNotificationToggleButton(root);
     createMessageToggleButton(root);
-    createTimelineToggleButton(root);
 }
 
 
@@ -231,7 +212,7 @@ function placeOnce() {
     }
 
     // Extra-Sicherung: Falls der Header erst später nachgeladen wird,
-    // beobachten wir das DOM und rufen placeOnce() erneut auf.
-    const mo = new MutationObserver(placeOnce);
+    // beobachten wir das DOM und rufen init() erneut auf.
+    const mo = new MutationObserver(init);
     mo.observe(document.documentElement, { childList: true, subtree: true });
 })();
