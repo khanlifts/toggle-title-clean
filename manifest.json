@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Toggle Title",
+  "name": "Hide LinkedIn Distractions",
   "version": "1.0",
-  "description": "Toggle the display of the title of the Chrome Extension documentation by button click.",
+  "description": "Hides distractions from LinkedIn like notifications, messages and more.",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
