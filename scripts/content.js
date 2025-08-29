@@ -7,7 +7,8 @@ const HIDE_MESSAGES_CLASS = 'myext-hide-messages';
 const HIDE_NOTIFICATIONS_CLASS = 'myext-hide-notifications';
 
 const TIMELINE_SELECTORS = [
-    '.scaffold-finite-scroll'
+    '.scaffold-finite-scroll',
+    '.feed-new-update-pill'
 ];
 
 const NOTIFICATION_SELECTORS = [
@@ -29,7 +30,7 @@ function waitForHeadAndInjectStyles() {
     }
 }
 
-// Neuer: Klasse möglichst früh setzen, aber nur wenn <body> existiert
+// Klasse möglichst früh setzen, aber nur wenn <body> existiert
 function waitForBodyAndApplyState() {
     if (document.body) {
         if (localStorage.getItem(HIDE_TIMELINE_CLASS) === '1') {
@@ -85,7 +86,7 @@ function createButtonStyleElement() {
     const style = document.createElement('style');
     style.textContent = `
       button {
-        all: initial;                      /* alle Standard-Styles zurücksetzen */
+        all: initial;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -104,67 +105,23 @@ function createButtonStyleElement() {
     return style;
 }
 
-function createNotificationToggleButton(root) {
+function createToggleButton(root, { className, title, visibleIcon, hiddenIcon }) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.title = 'Benachrichtigungen umschalten';
-    btn.textContent = '🔔';
+    btn.title = title;
+    btn.textContent = document.body.classList.contains(className) ? hiddenIcon : visibleIcon;
+
     btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDE_NOTIFICATIONS_CLASS);
-        btn.textContent = isNowHidden ? '🔕' : '🔔';
+        const isNowHidden = document.body.classList.toggle(className);
+        btn.textContent = isNowHidden ? hiddenIcon : visibleIcon;
 
         try {
-            localStorage.setItem(HIDE_NOTIFICATIONS_CLASS, isNowHidden ? '1' : '0');
+            localStorage.setItem(className, isNowHidden ? '1' : '0');
         } catch (e) {
             console.warn('[myext] localStorage not available', e);
         }
     });
 
-    // Zustand initial setzen (richtiges Emoji)
-    btn.textContent = document.body.classList.contains(HIDE_NOTIFICATIONS_CLASS) ? '🔕' : '🔔';
-
-    root.appendChild(btn);
-}
-
-function createMessageToggleButton(root) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = 'Nachrichten umschalten';
-    btn.textContent = '💬';
-    btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDE_MESSAGES_CLASS);
-        btn.textContent = isNowHidden ? '🚫' : '💬';
-
-        try {
-            localStorage.setItem('myext-hide-messages', isNowHidden ? '1' : '0');
-        } catch (e) {
-            console.warn('[myext] localStorage not available', e);
-        }
-    });
-
-    btn.textContent = document.body.classList.contains(HIDE_MESSAGES_CLASS) ? '🚫' : '💬';
-
-    root.appendChild(btn);
-}
-
-
-function createTimelineToggleButton(root) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = 'Timeline umschalten';
-    btn.textContent = '👀';
-    btn.addEventListener('click', () => {
-        const isNowHidden = document.body.classList.toggle(HIDE_TIMELINE_CLASS);
-        btn.textContent = isNowHidden ? '🙈' : '👀';
-
-        try {
-            localStorage.setItem(HIDE_TIMELINE_CLASS, isNowHidden ? '1' : '0');
-        } catch (e) {
-            console.warn('[myext] localStorage not available', e);
-        }
-    });
-
-    btn.textContent = document.body.classList.contains(HIDE_TIMELINE_CLASS) ? '🙈' : '👀';
 
     root.appendChild(btn);
 }
@@ -181,10 +138,10 @@ function init() {
     //    - In diesen <span> setzen wir gleich einen Shadow Root (eine Art Mini-DOM-Insel)
     const host = document.createElement('span');
     host.id = HOST_ID;
-    host.style.display = 'inline-block';   // damit der Button nicht verrutscht
-    host.style.verticalAlign = 'middle';   // optisch mittig am Titel ausgerichtet
-    host.style.marginLeft = '8px';         // kleiner Abstand zum Titel
-    titleEl.insertAdjacentElement('afterend', host); // direkt nach dem Titel einfügen
+    host.style.display = 'inline-block';
+    host.style.verticalAlign = 'middle';
+    host.style.marginLeft = '8px';
+    titleEl.insertAdjacentElement('afterend', host);
 
     // 4. Shadow DOM erzeugen:
     //    - attachShadow() kapselt HTML/CSS vom Rest der Seite ab
@@ -194,9 +151,24 @@ function init() {
 
     root.appendChild(createButtonStyleElement());
 
-    createTimelineToggleButton(root);
-    createNotificationToggleButton(root);
-    createMessageToggleButton(root);
+    createToggleButton(root, {
+        className: HIDE_TIMELINE_CLASS,
+        title: 'Timeline umschalten',
+        visibleIcon: '👀',
+        hiddenIcon: '🙈'
+    })
+    createToggleButton(root, {
+        className: HIDE_NOTIFICATIONS_CLASS,
+        title: 'Benachrichtungen umschalten',
+        visibleIcon: '🔔',
+        hiddenIcon: '🔕'
+    })
+    createToggleButton(root, {
+        className: HIDE_MESSAGES_CLASS,
+        title: 'Nachrichten umschalten',
+        visibleIcon: '💬',
+        hiddenIcon: '🚫'
+    })
 }
 
 
