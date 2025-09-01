@@ -42,6 +42,8 @@ function waitForBodyAndApplyState() {
         if (localStorage.getItem(HIDE_MESSAGES_CLASS) === '1') {
             document.body.classList.add(HIDE_MESSAGES_CLASS);
         }
+
+        waitForCommentFieldAndInjectButton();
     } else {
         requestAnimationFrame(waitForBodyAndApplyState);
     }
@@ -187,4 +189,27 @@ function init() {
     // beobachten wir das DOM und rufen init() erneut auf.
     const mo = new MutationObserver(init);
     mo.observe(document.documentElement, { childList: true, subtree: true });
+
 })();
+
+function waitForCommentFieldAndInjectButton() {
+    const observer = new MutationObserver(() => {
+        const toolbar = document.querySelector('.comments-comment-box-comment__text-editor');
+        console.log('toolbar', toolbar);
+        if (!toolbar) return;
+
+        // Verhindern, dass mehrfach Buttons erstellt werden
+        if (toolbar.querySelector('#myext-dictation-btn')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'myext-dictation-btn';
+        btn.textContent = '🎙️';
+        btn.title = 'Diktieren';
+        btn.style.marginLeft = '6px';
+        btn.style.cursor = 'pointer';
+        console.log('btn', btn);
+        toolbar.appendChild(btn);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
